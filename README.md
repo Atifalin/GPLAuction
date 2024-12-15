@@ -10,27 +10,57 @@ A real-time football player auction system built with React, Node.js, and MongoD
 - **JWT-based**: Tokens for session management
 - **Real-time Status**: Shows currently logged-in users
 - **User Cards**: Visual cards with emojis for each user
+- **Smart Navigation**: Automatic redirect to home page after login
 
-### User Management
-- **User States**:
-  - Online/Offline status tracking
-  - Persistent host identification
-  - Squad management
-  - Main XI selection
+### Navigation & UI
+- **Modern App Bar**: Easy access to all features
+- **Responsive Design**: Works on all screen sizes
+- **Dark Theme**: Easy on the eyes
+- **Real-time Status Bar**: Shows server connection status
+- **User Info Display**: Shows current user's emoji and name
+- **Quick Actions**: Easy access to logout
 
-### Player System
-- **Player Pool**: 1000 players total
+### Player Database
+- **Comprehensive Pool**: 1000 players total
   - 20+ Goalkeepers
   - 200+ Defenders
   - 400+ Midfielders
   - ~380 Attackers
+- **Advanced Search**: Filter by name, position, and tier
+- **Player Cards**: Detailed player information including:
+  - Name and Position
+  - Club and Nationality
+  - Overall Rating
+  - Tier Classification
+  - Minimum Bid Value
 
 ### Player Categories
-- **Tiers and Minimum Bids**:
-  - Bronze: 10 Ghanta Coins (GC)
-  - Silver: 25 GC
-  - Gold: 50 GC
-  - Elite: 75 GC
+- **Tier System**:
+  - Bronze: 10 Ghanta Coins (GC) minimum bid
+  - Silver: 25 GC minimum bid
+  - Gold: 50 GC minimum bid
+  - Elite: 75 GC minimum bid
+- **Position Groups**:
+  - Goalkeepers (GK)
+  - Defenders (RB, LB, CB, RWB, LWB, RCB, LCB)
+  - Midfielders (CDM, CM, CAM, RM, LM, RDM, LDM, RCM, LCM)
+  - Attackers (RW, LW, ST, CF, RF, LF, RS, LS)
+
+### Auction Player Selection
+- **Smart Default Selection**:
+  - 10 Goalkeepers
+  - 30 Defenders
+  - 30 Midfielders
+  - 30 Attackers
+  - Guaranteed minimum of 5 players from each tier
+- **Custom Selection**:
+  - Add/Remove individual players
+  - Reset to default selection
+  - View currently selected players
+- **Selection Management**:
+  - Prevents duplicate selections
+  - Real-time updates
+  - Clear feedback on actions
 
 ### Auction System
 - **Auction States**:
@@ -50,17 +80,23 @@ A real-time football player auction system built with React, Node.js, and MongoD
   - View Auction
   - Place Bids
 
-### Statistics Tracking
-- **User Stats**:
+### Squad Management
+- **Main XI**: Select and manage your top 11 players
+- **Full Squad**: View all players won in auctions
+- **Stats Tracking**:
   - Total auctions participated
   - Average coins spent
   - Biggest bid made
   - Most frequently bought players
 
-- **Auction Stats**:
-  - Time elapsed
-  - Winning bids
-  - Player ownership
+### Real-time Features
+- **Live Updates**:
+  - Server connection status
+  - User online/offline status
+  - Auction state changes
+  - Bid updates
+- **Socket Integration**: Instant updates without page refresh
+- **Error Handling**: Clear feedback on connection issues
 
 ## 🛠 Technical Stack
 
