@@ -39,3 +39,6 @@ pids
 *.swn
 .DS_Store
 Thumbs.db
+
+# Data files
+players.csv

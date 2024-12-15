@@ -5,7 +5,8 @@ import {
   Typography,
   Box,
   Chip,
-  useTheme
+  useTheme,
+  Grid
 } from '@mui/material';
 import {
   Radar,
@@ -49,85 +50,159 @@ const PlayerCard = ({ player }) => {
   const theme = useTheme();
 
   const statsData = [
-    { subject: 'PAC', value: player.stats.pace },
-    { subject: 'SHO', value: player.stats.shooting },
-    { subject: 'PAS', value: player.stats.passing },
-    { subject: 'DRI', value: player.stats.dribbling },
-    { subject: 'DEF', value: player.stats.defending },
-    { subject: 'PHY', value: player.stats.physical }
+    { name: 'PAC', value: player.stats.pace },
+    { name: 'SHO', value: player.stats.shooting },
+    { name: 'PAS', value: player.stats.passing },
+    { name: 'DRI', value: player.stats.dribbling },
+    { name: 'DEF', value: player.stats.defending },
+    { name: 'PHY', value: player.stats.physical }
   ];
+
+  const getTierGradient = (tier) => {
+    if (tier === 'Elite') {
+      return 'linear-gradient(135deg, #FFD700 0%, #FF4444 100%)';
+    }
+    return getTierColor(tier);
+  };
+
+  const getRadarColor = (tier) => {
+    switch (tier) {
+      case 'Elite':
+        return { stroke: '#FFD700', fill: '#FF4444' };
+      case 'Gold':
+        return { stroke: '#FFD700', fill: '#DAA520' };
+      case 'Silver':
+        return { stroke: '#C0C0C0', fill: '#A9A9A9' };
+      case 'Bronze':
+        return { stroke: '#CD7F32', fill: '#8B4513' };
+      default:
+        return { stroke: '#000000', fill: '#666666' };
+    }
+  };
+
+  const radarColors = getRadarColor(player.tier);
 
   return (
     <Card 
       sx={{ 
-        height: '100%',
-        display: 'flex',
+        height: '100%', 
+        display: 'flex', 
         flexDirection: 'column',
-        transition: 'transform 0.2s',
+        border: 3,
+        borderColor: getTierColor(player.tier),
+        borderRadius: 2,
         '&:hover': {
           transform: 'scale(1.02)',
+          transition: 'transform 0.2s ease-in-out'
         }
       }}
     >
-      <CardContent>
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" component="div" noWrap>
-            {player.name}
-          </Typography>
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
-              color: getTierColor(player.tier),
-              fontWeight: 'bold'
-            }}
-          >
-            {player.stats.overall}
-          </Typography>
-        </Box>
+      <CardContent sx={{ height: '100%', p: 3 }}>
+        <Grid container spacing={3} sx={{ height: '100%' }}>
+          {/* Left Column - Player Info */}
+          <Grid item xs={5}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+              {/* Name */}
+              <Typography 
+                variant="h5" 
+                component="div" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  color: theme.palette.text.primary,
+                }}
+              >
+                {player.shortName}
+              </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-          <Chip
-            label={player.position}
-            size="small"
-            sx={{
-              bgcolor: getPositionColor(player.position),
-              color: 'white'
-            }}
-          />
-          <Chip
-            label={player.tier}
-            size="small"
-            sx={{
-              bgcolor: getTierColor(player.tier),
-              color: 'white'
-            }}
-          />
-          <Chip
-            label={`${player.minBid} GC`}
-            size="small"
-            sx={{ bgcolor: theme.palette.grey[700], color: 'white' }}
-          />
-        </Box>
+              {/* Overall Rating */}
+              <Chip 
+                label={player.overall}
+                size="large"
+                sx={{ 
+                  background: getTierGradient(player.tier),
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '1.2rem',
+                  height: 36,
+                  minWidth: 48
+                }}
+              />
+            </Box>
 
-        <Box sx={{ width: '100%', height: 200 }}>
-          <ResponsiveContainer>
-            <RadarChart data={statsData}>
-              <PolarGrid />
-              <PolarAngleAxis
-                dataKey="subject"
-                tick={{ fill: theme.palette.text.primary }}
+            {/* Position chips */}
+            <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+              <Chip
+                label={player.position}
+                size="medium"
+                sx={{ 
+                  backgroundColor: getPositionColor(player.position), 
+                  color: 'white',
+                  fontWeight: 'bold'
+                }}
               />
-              <Radar
-                name="Stats"
-                dataKey="value"
-                stroke={getTierColor(player.tier)}
-                fill={getTierColor(player.tier)}
-                fillOpacity={0.3}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </Box>
+              {player.alternatePositions && player.alternatePositions.slice(0, 2).map((pos, idx) => (
+                <Chip
+                  key={idx}
+                  label={pos}
+                  size="medium"
+                  variant="outlined"
+                  sx={{ 
+                    borderColor: getPositionColor(pos), 
+                    color: getPositionColor(pos),
+                    fontWeight: 'bold'
+                  }}
+                />
+              ))}
+            </Box>
+
+            {/* Club and nationality info */}
+            <Typography variant="h6" sx={{ fontWeight: 'medium', mb: 1 }}>
+              {player.club}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>
+              {player.league}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+              {player.nationality}
+              {player.nationNumber && ` #${player.nationNumber}`}
+            </Typography>
+
+            {/* Cost */}
+            <Chip
+              label={`${player.minimumBid} GC`}
+              size="medium"
+              color="primary"
+              sx={{ 
+                fontWeight: 'bold',
+                backgroundColor: theme.palette.success.main
+              }}
+            />
+          </Grid>
+
+          {/* Right Column - Stats Radar */}
+          <Grid item xs={7}>
+            {/* Radar Chart */}
+            <Box sx={{ height: 320, width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={statsData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+                  <PolarGrid strokeDasharray="3 3" />
+                  <PolarAngleAxis 
+                    dataKey="name" 
+                    tick={{ fill: theme.palette.text.primary, fontSize: 14 }}
+                  />
+                  <Radar
+                    name={player.shortName}
+                    dataKey="value"
+                    stroke={radarColors.stroke}
+                    fill={radarColors.fill}
+                    fillOpacity={0.6}
+                    strokeWidth={2}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </Box>
+          </Grid>
+        </Grid>
       </CardContent>
     </Card>
   );

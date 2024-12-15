@@ -5,19 +5,39 @@ const Player = require('../models/Player');
 // Get all players with filtering options
 router.get('/', async (req, res) => {
   try {
-    const { position, tier, search } = req.query;
-    let query = {};
-
-    // Apply filters
-    if (position) query.position = position;
-    if (tier) query.tier = tier;
+    const { position, tier, search, limit = 100 } = req.query;
+    
+    // Build query
+    const query = {};
+    
+    if (position) {
+      // Handle position filter
+      if (position === 'GK') {
+        query.position = 'GK';
+      } else if (position === 'DEF') {
+        query.position = { $in: ['RB', 'LB', 'CB'] };
+      } else if (position === 'MID') {
+        query.position = { $in: ['CDM', 'CM', 'CAM'] };
+      } else if (position === 'ATT') {
+        query.position = { $in: ['RW', 'LW', 'ST', 'CF'] };
+      }
+    }
+    
+    if (tier) {
+      query.tier = tier;
+    }
+    
     if (search) {
-      query.name = { $regex: search, $options: 'i' };
+      query.$or = [
+        { shortName: { $regex: search, $options: 'i' } },
+        { longName: { $regex: search, $options: 'i' } }
+      ];
     }
 
+    // Get players with limit
     const players = await Player.find(query)
-      .sort({ 'stats.overall': -1 })
-      .limit(50); // Paginate results to avoid overwhelming response
+      .limit(parseInt(limit))
+      .sort({ 'stats.overall': -1 });
 
     res.json(players);
   } catch (error) {
