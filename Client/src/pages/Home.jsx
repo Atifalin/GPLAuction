@@ -1,6 +1,12 @@
 import React from 'react';
-import { Container, Typography, Paper, Box, Button } from '@mui/material';
+import { Container, Typography, Paper, Box, Button, Grid } from '@mui/material';
 import { Link } from 'react-router-dom';
+import { 
+  People as PeopleIcon, 
+  Gavel as GavelIcon,
+  PersonAdd as PersonAddIcon,
+  Assessment as AssessmentIcon 
+} from '@mui/icons-material';
 
 const Home = () => {
   return (
@@ -46,16 +52,60 @@ const Home = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
-          <Button
-            component={Link}
-            to="/players"
-            variant="contained"
-            size="large"
-          >
-            View Players
-          </Button>
-        </Box>
+        <Grid container spacing={2} sx={{ mt: 2 }}>
+          <Grid item xs={12} sm={6}>
+            <Button
+              component={Link}
+              to="/players"
+              variant="contained"
+              color="primary"
+              fullWidth
+              startIcon={<PeopleIcon />}
+              sx={{ py: 1.5 }}
+            >
+              View Players
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Button
+              component={Link}
+              to="/auction-selection"
+              variant="contained"
+              color="secondary"
+              fullWidth
+              startIcon={<GavelIcon />}
+              sx={{ py: 1.5 }}
+            >
+              Auction Selection
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Button
+              component={Link}
+              to="/profile"
+              variant="outlined"
+              color="primary"
+              fullWidth
+              startIcon={<PersonAddIcon />}
+              sx={{ py: 1.5 }}
+            >
+              My Profile
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Button
+              component={Link}
+              to="/stats"
+              variant="outlined"
+              color="secondary"
+              fullWidth
+              startIcon={<AssessmentIcon />}
+              sx={{ py: 1.5 }}
+            >
+              View Stats
+            </Button>
+          </Grid>
+        </Grid>
       </Paper>
     </Container>
   );

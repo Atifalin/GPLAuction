@@ -5,7 +5,7 @@ const Player = require('../models/Player');
 // Get all players with filtering options
 router.get('/', async (req, res) => {
   try {
-    const { position, tier, search, limit = 100 } = req.query;
+    const { position, tier, search } = req.query;
     
     // Build query
     const query = {};
@@ -15,11 +15,11 @@ router.get('/', async (req, res) => {
       if (position === 'GK') {
         query.position = 'GK';
       } else if (position === 'DEF') {
-        query.position = { $in: ['RB', 'LB', 'CB'] };
+        query.position = { $in: ['RB', 'LB', 'CB', 'RWB', 'LWB', 'RCB', 'LCB'] };
       } else if (position === 'MID') {
-        query.position = { $in: ['CDM', 'CM', 'CAM'] };
+        query.position = { $in: ['CDM', 'CM', 'CAM', 'RM', 'LM', 'RDM', 'LDM', 'RCM', 'LCM'] };
       } else if (position === 'ATT') {
-        query.position = { $in: ['RW', 'LW', 'ST', 'CF'] };
+        query.position = { $in: ['RW', 'LW', 'ST', 'CF', 'RF', 'LF', 'RS', 'LS'] };
       }
     }
     
@@ -29,20 +29,22 @@ router.get('/', async (req, res) => {
     
     if (search) {
       query.$or = [
-        { shortName: { $regex: search, $options: 'i' } },
-        { longName: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: 'i' } },
+        { club: { $regex: search, $options: 'i' } },
+        { nationality: { $regex: search, $options: 'i' } }
       ];
     }
 
-    // Get players with limit
-    const players = await Player.find(query)
-      .limit(parseInt(limit))
-      .sort({ 'stats.overall': -1 });
-
+    console.log('Player search query:', query);
+    
+    // Execute query without limit
+    const players = await Player.find(query).sort({ overall: -1 });
+    console.log(`Found ${players.length} players`);
+    
     res.json(players);
   } catch (error) {
     console.error('Error fetching players:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: error.message });
   }
 });
 

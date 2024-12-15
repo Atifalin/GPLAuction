@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 // Get all users with their login status
@@ -28,6 +29,13 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid PIN' });
     }
 
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
     // Update login status
     user.isLoggedIn = true;
     await user.save();
@@ -38,7 +46,8 @@ router.post('/login', async (req, res) => {
         _id: user._id,
         name: user.name,
         emoji: user.emoji,
-        isLoggedIn: user.isLoggedIn
+        isLoggedIn: user.isLoggedIn,
+        token // Include the token in the response
       }
     });
   } catch (error) {
@@ -60,7 +69,7 @@ router.post('/logout', async (req, res) => {
     user.isLoggedIn = false;
     await user.save();
 
-    res.json({ message: 'Logged out successfully' });
+    res.json({ success: true });
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({ message: error.message });

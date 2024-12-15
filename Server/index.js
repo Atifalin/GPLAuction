@@ -21,10 +21,12 @@ app.use(express.json());
 // Import routes
 const authRoutes = require('./routes/auth');
 const playersRoutes = require('./routes/players');
+const auctionPlayersRoutes = require('./routes/auctionPlayers');
 
 // Use routes
-app.use('/auth', authRoutes);
-app.use('/players', playersRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/players', playersRoutes);
+app.use('/api/auction-players', auctionPlayersRoutes);
 
 // Initialize predefined users
 const initializeUsers = async () => {
