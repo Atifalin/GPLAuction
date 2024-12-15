@@ -143,7 +143,7 @@ const AuctionPlayerSelection = () => {
             onClick={resetToDefault}
             style={{ marginBottom: '1rem' }}
           >
-            Reset to Default Selection
+            Add/Reset Default Selections
           </Button>
         </Grid>
 
