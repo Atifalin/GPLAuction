@@ -69,7 +69,7 @@ const LoginPage = ({ onLogin }) => {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setError('');
       
       if (!selectedUser || !pinValue) {
         setError('Please select a user and enter PIN');
@@ -83,10 +83,12 @@ const LoginPage = ({ onLogin }) => {
       });
 
       if (response.data.success) {
-        const user = response.data.user;
+        const { token, user } = response.data;
+        localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
+        
         onLogin(user);
-        handleClose();
+        window.location.href = '/'; 
       } else {
         setError('Login failed. Please try again.');
         setPinValue('');

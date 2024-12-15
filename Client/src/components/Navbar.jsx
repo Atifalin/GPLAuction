@@ -38,6 +38,14 @@ const Navbar = ({ user, onLogout }) => {
           >
             Players
           </Button>
+          
+          <Button 
+            component={Link} 
+            to="/auction-selection" 
+            color="inherit"
+          >
+            Auction Selection
+          </Button>
 
           <Box sx={{ 
             display: 'flex', 
@@ -50,15 +58,15 @@ const Navbar = ({ user, onLogout }) => {
           }}>
             <Typography>{user.emoji}</Typography>
             <Typography>{user.name}</Typography>
+            <IconButton 
+              size="small" 
+              color="inherit" 
+              onClick={onLogout}
+              sx={{ ml: 1 }}
+            >
+              <LogoutIcon />
+            </IconButton>
           </Box>
-
-          <IconButton 
-            color="inherit" 
-            onClick={onLogout}
-            title="Logout"
-          >
-            <LogoutIcon />
-          </IconButton>
         </Box>
       </Toolbar>
     </AppBar>

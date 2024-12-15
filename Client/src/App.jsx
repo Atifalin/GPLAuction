@@ -97,31 +97,30 @@ function App() {
           {user && <Navbar user={user} onLogout={handleLogout} />}
           <Box component="main" sx={{ flexGrow: 1, p: 3, mt: user ? 8 : 0 }}>
             <Routes>
-              <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Home />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/players"
-                element={
-                  <ProtectedRoute>
+              <Route path="/login" element={
+                user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />
+              } />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Box sx={{ mt: 8, mb: 2 }}>
+                    <Home user={user} />
+                  </Box>
+                </ProtectedRoute>
+              } />
+              <Route path="/players" element={
+                <ProtectedRoute>
+                  <Box sx={{ mt: 8, mb: 2 }}>
                     <Players />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/auction-selection"
-                element={
-                  <ProtectedRoute>
+                  </Box>
+                </ProtectedRoute>
+              } />
+              <Route path="/auction-selection" element={
+                <ProtectedRoute>
+                  <Box sx={{ mt: 8, mb: 2 }}>
                     <AuctionPlayerSelection />
-                  </ProtectedRoute>
-                }
-              />
+                  </Box>
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<Navigate to={user ? "/" : "/login"} />} />
             </Routes>
           </Box>
