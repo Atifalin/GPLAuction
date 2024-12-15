@@ -1,0 +1,106 @@
+Here are clear rules to ensure the AI adheres to the project's requirements and avoids hallucinating details or deviating from your specifications:
+
+---
+
+### **General Rules for This Project**
+1. **Predefined Users Only**:
+   - Do not introduce or allow for new user creation beyond the four predefined users.
+   - Authentication uses JWT tokens but does not require email or password. JWT tokens are simply identifiers tied to predefined user IDs.
+
+2. **Persistent Host Tracking**:
+   - Always save the host’s `userID` and `name` in the `Auction` database.
+   - Host identification must persist across server restarts, even if the host’s JWT changes or becomes invalid.
+   - The host should retain exclusive controls (`Start Auction`, `Delete Auction`, `Pause/Resume Auction`, etc.) for their created auctions.
+
+3. **Player Data Management**:
+   - Import **exactly 1000 players** from the CSV file, ensuring:
+     - At least 20 goalkeepers.
+     - At least 200 defenders.
+     - At least 400 midfielders.
+     - The remaining 380 players are attackers.
+   - Players are categorized by tiers (`Gold`, `Silver`, `Bronze`, `Elite`):
+     - Each tier has a minimum bid: 
+       - Bronze: 10 Ghanta Coins (GC).
+       - Silver: 25 GC.
+       - Gold: 50 GC.
+       - Elite: 75 GC.
+   - The CSV import process automatically assigns these tiers, positions, and minimum bids.
+
+4. **Auction Logic**:
+   - Auctions are classified into three statuses:
+     - **Pending**: Created but not started.
+     - **Active**: In progress.
+     - **Completed**: Finished.
+   - Auctions must include the following controls:
+     - **Host-only controls**:
+       - Start Auction.
+       - Pause/Resume Auction.
+       - End Auction.
+       - Delete Auction (only when the auction is in Pending status).
+       - Next Player.
+     - **User controls**:
+       - Join Auction (only if not already joined and the auction is Active).
+       - View Auction (for any auction status).
+
+5. **Player Selection for Auction**:
+   - Players are divided into:
+     - **Available for Auction**: Visible and selectable by users for bidding.
+     - **Not Available for Auction**: Hidden from selection and bidding.
+   - Each user has a page to select or deselect players for auction.
+   - Default selections should be pre-configured but modifiable by users.
+
+6. **Squad and Sub Management**:
+   - The **profile page** for each user contains:
+     - **Main XI**: The user’s top 11 players.
+     - **Squad**: All players won by the user in previous auctions.
+
+7. **Player Cards**:
+   - Player cards must include:
+     - Name, position, and tier.
+     - Minimum bid for the player.
+     - Player stats displayed as a radar chart.
+
+8. **Stats and Insights**:
+   - User stats must track:
+     - Total auctions participated in.
+     - Average coins spent per auction.
+     - Biggest bid made.
+     - Most frequently bought players.
+   - Auctioned player stats must track:
+     - Total time elapsed for the auction.
+     - Winning bids for each player.
+     - Owner of the player after the auction.
+
+9. **UI and Navigation**:
+a   - Display server connection status and connected users using sockets.
+     - Status bar should auto-hide but be accessible for troubleshooting.
+   - **Auctions Page**:
+     - List all auctions with filters: Pending, Active, Completed.
+     - Allow viewing, joining, and hosting auctions as per rules.
+   - **Player Database**:
+     - Display all players with search and filter options (by position and tier).
+   - **Selected Players Page**:
+     - Allow users to modify their selection of players for the auction.
+
+10. **Error Handling and Edge Cases**:
+    - Ensure the system prevents unauthorized actions:
+      - Only the host can perform host-specific actions.
+      - Users cannot join an auction multiple times or join a completed auction.
+    - Handle server restarts gracefully:
+      - Ensure host identity, auction status, and player assignments persist.
+      - Use database-driven logic to ensure consistent state retrieval.
+
+12. **Terminology Consistency**:
+    - Always use the correct terminology:
+      - "Main XI" instead of "Team Players."
+      - "Squad" instead of "Won Players."
+      - "Ghanta Coins" (GC) as the currency.
+      - "Host" for the creator of the auction.
+
+---
+
+### **Fallback Rules for Ambiguities**
+- If instructions are unclear, **ask for clarification** instead of assuming or hallucinating details.
+- Follow established standards (e.g., RESTful APIs, MongoDB schema design) unless explicitly directed otherwise.
+- Prioritize functionality over aesthetics unless otherwise specified.
+
