@@ -1,125 +1,206 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const socketIo = require('socket.io');
-const jwt = require('jsonwebtoken');
+const http = require('http');
+const { Server } = require('socket.io');
 const User = require('./models/User');
-const predefinedUsers = require('./config/users');
-const authRoutes = require('./routes/auth');
-
-dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }
+});
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/auth', authRoutes);
+// Import routes
+const authRoutes = require('./routes/auth');
+const playersRoutes = require('./routes/players');
 
-// Initialize users function
-async function initializeUsers() {
+// Use routes
+app.use('/auth', authRoutes);
+app.use('/players', playersRoutes);
+
+// Initialize predefined users
+const initializeUsers = async () => {
   try {
-    // First, remove all existing users
     await User.deleteMany({});
     console.log('Cleared existing users');
 
-    // Create all predefined users
-    const users = await User.insertMany(
-      predefinedUsers.map(user => ({
-        _id: user.userId,
-        ...user,
-        isLoggedIn: false
-      }))
-    );
+    const users = await User.create([
+      {
+        _id: 'ATIF',
+        name: 'Atif',
+        pin: '0000',
+        emoji: '🦁',
+        isLoggedIn: false,
+        mainXI: [],
+        squad: [],
+        stats: {
+          totalAuctions: 0,
+          averageCoinsSpent: 0,
+          biggestBid: 0,
+          frequentlyBoughtPlayers: []
+        }
+      },
+      {
+        _id: 'SAQIB',
+        name: 'Saqib',
+        pin: '0000',
+        emoji: '🐯',
+        isLoggedIn: false,
+        mainXI: [],
+        squad: [],
+        stats: {
+          totalAuctions: 0,
+          averageCoinsSpent: 0,
+          biggestBid: 0,
+          frequentlyBoughtPlayers: []
+        }
+      },
+      {
+        _id: 'AQIB',
+        name: 'Aqib',
+        pin: '0000',
+        emoji: '🦊',
+        isLoggedIn: false,
+        mainXI: [],
+        squad: [],
+        stats: {
+          totalAuctions: 0,
+          averageCoinsSpent: 0,
+          biggestBid: 0,
+          frequentlyBoughtPlayers: []
+        }
+      },
+      {
+        _id: 'WASIF',
+        name: 'Wasif',
+        pin: '0000',
+        emoji: '🐺',
+        isLoggedIn: false,
+        mainXI: [],
+        squad: [],
+        stats: {
+          totalAuctions: 0,
+          averageCoinsSpent: 0,
+          biggestBid: 0,
+          frequentlyBoughtPlayers: []
+        }
+      }
+    ]);
 
     console.log('Created users:', users);
-    return users;
   } catch (error) {
     console.error('Error initializing users:', error);
-    throw error;
   }
-}
+};
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ghantapl')
-  .then(async () => {
-    console.log('Connected to MongoDB');
-    mongodbConnected = true;
-    
-    // Initialize users
-    await initializeUsers();
-    
-    broadcastStatus();
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
-    mongodbConnected = false;
-    broadcastStatus();
-  });
+// Track online users and their socket IDs
+const onlineUsers = new Map(); // Maps userID to socket ID
+const userSockets = new Map(); // Maps socket ID to userID
 
-// Track MongoDB connection status
-let mongodbConnected = false;
-mongoose.connection.on('connected', () => {
-  mongodbConnected = true;
-  broadcastStatus();
-});
-
-mongoose.connection.on('disconnected', () => {
-  mongodbConnected = false;
-  broadcastStatus();
-});
-
-// Basic server setup
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-// Socket.io setup
-const io = socketIo(server, {
-  cors: {
-    origin: "http://localhost:5173", // Vite default port
-    methods: ["GET", "POST"]
-  }
-});
-
-// Track connected clients
-let connectedClients = 0;
-
-// Broadcast status to all connected clients
-function broadcastStatus() {
-  io.emit('serverStatus', {
-    server: true,
-    mongodb: mongodbConnected,
-    connectedClients
-  });
-}
-
+// Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log('New client connected');
-  connectedClients++;
-  broadcastStatus();
-  
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-    connectedClients--;
-    broadcastStatus();
+
+  // Send initial server status to the new client
+  socket.emit('serverStatus', {
+    server: true,
+    mongodb: mongoose.connection.readyState === 1,
+    onlineUsers: onlineUsers.size
   });
 
-  socket.on('getStatus', () => {
-    socket.emit('serverStatus', {
+  socket.on('userConnected', (userId) => {
+    // Check if user is already connected
+    if (onlineUsers.has(userId)) {
+      // Emit error to the new connection
+      socket.emit('loginError', 'User is already logged in');
+      return;
+    }
+
+    // Add user to tracking maps
+    onlineUsers.set(userId, socket.id);
+    userSockets.set(socket.id, userId);
+
+    // Broadcast updated status to all clients
+    io.emit('serverStatus', {
       server: true,
-      mongodb: mongodbConnected,
-      connectedClients
+      mongodb: mongoose.connection.readyState === 1,
+      onlineUsers: onlineUsers.size
+    });
+  });
+
+  socket.on('disconnect', () => {
+    const userId = userSockets.get(socket.id);
+    if (userId) {
+      onlineUsers.delete(userId);
+      userSockets.delete(socket.id);
+    }
+
+    // Broadcast updated status
+    io.emit('serverStatus', {
+      server: true,
+      mongodb: mongoose.connection.readyState === 1,
+      onlineUsers: onlineUsers.size
+    });
+  });
+
+  socket.on('userDisconnected', (userId) => {
+    if (onlineUsers.has(userId)) {
+      onlineUsers.delete(userId);
+      const socketId = onlineUsers.get(userId);
+      if (socketId) {
+        userSockets.delete(socketId);
+      }
+    }
+
+    // Broadcast updated status
+    io.emit('serverStatus', {
+      server: true,
+      mongodb: mongoose.connection.readyState === 1,
+      onlineUsers: onlineUsers.size
     });
   });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+// MongoDB connection status events
+mongoose.connection.on('connected', () => {
+  console.log('MongoDB connected');
+  io.emit('serverStatus', {
+    server: true,
+    mongodb: true,
+    onlineUsers: onlineUsers.size
+  });
 });
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+  io.emit('serverStatus', {
+    server: true,
+    mongodb: false,
+    onlineUsers: onlineUsers.size
+  });
+});
+
+// Connect to MongoDB and start server
+mongoose.connect('mongodb://localhost:27017/GhantaPLAuction')
+  .then(async () => {
+    console.log('Connected to MongoDB');
+    await initializeUsers();
+    
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+  });
+
+module.exports = { app, server };

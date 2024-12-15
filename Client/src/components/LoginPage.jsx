@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Container,
   Grid,
   Card,
   CardContent,
@@ -8,20 +9,44 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  TextField,
   DialogActions,
+  TextField,
   Button,
   IconButton,
-  Container,
+  CircularProgress
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import axios from 'axios';
+import api from '../api/axios';
+import io from 'socket.io-client';
 
 const LoginPage = ({ onLogin }) => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [pin, setPin] = useState('');
+  const [pinValue, setPinValue] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [serverStatus, setServerStatus] = useState(null);
+
+  useEffect(() => {
+    const socket = io('http://localhost:5000');
+
+    socket.on('connect', () => {
+      console.log('Connected to login page socket');
+    });
+
+    socket.on('serverStatus', (status) => {
+      setServerStatus(status);
+    });
+
+    socket.on('loginError', (error) => {
+      setError(error);
+      setPinValue('');
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -29,28 +54,56 @@ const LoginPage = ({ onLogin }) => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/auth/users');
+      console.log('Fetching users...');
+      const response = await api.get('/auth/users');
+      console.log('Users response:', response.data);
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setError('Failed to load users. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://localhost:5000/auth/login', {
-        _id: selectedUser._id,
-        pin
+      setLoading(true);
+      setError(null);
+      
+      if (!selectedUser || !pinValue) {
+        setError('Please select a user and enter PIN');
+        setLoading(false);
+        return;
+      }
+
+      const response = await api.post('/auth/login', {
+        userId: selectedUser._id,
+        pin: pinValue
       });
 
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      onLogin(response.data.user);
-      setSelectedUser(null);
-      setPin('');
-    } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
+      if (response.data.success) {
+        const user = response.data.user;
+        localStorage.setItem('user', JSON.stringify(user));
+        onLogin(user);
+        handleClose();
+      } else {
+        setError('Login failed. Please try again.');
+        setPinValue('');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setPinValue('');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleClose = () => {
+    setSelectedUser(null);
+    setPinValue('');
+    setError('');
   };
 
   const UserCard = ({ user }) => (
@@ -92,6 +145,43 @@ const LoginPage = ({ onLogin }) => {
     </Card>
   );
 
+  if (loading) {
+    return (
+      <Box 
+        sx={{ 
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error && !users.length) {
+    return (
+      <Box 
+        sx={{ 
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 2
+        }}
+      >
+        <Typography variant="h6" color="error">
+          {error}
+        </Typography>
+        <Button variant="contained" onClick={fetchUsers}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
   return (
     <Box 
       sx={{ 
@@ -106,6 +196,14 @@ const LoginPage = ({ onLogin }) => {
         <Typography variant="h3" component="h1" align="center" gutterBottom sx={{ mb: 6, color: 'text.primary' }}>
           Ghanta PL Auction
         </Typography>
+        <Box sx={{ mb: 2, textAlign: 'center' }}>
+          {serverStatus && (
+            <Typography variant="body2" color="text.secondary">
+              Server Status: {serverStatus.server ? 'Connected' : 'Disconnected'} | 
+              Online Users: {serverStatus.onlineUsers}
+            </Typography>
+          )}
+        </Box>
         <Grid container spacing={4} justifyContent="center">
           {users.map((user) => (
             <Grid item xs={12} sm={6} md={3} key={user._id}>
@@ -113,52 +211,53 @@ const LoginPage = ({ onLogin }) => {
             </Grid>
           ))}
         </Grid>
-      </Container>
 
-      <Dialog 
-        open={!!selectedUser} 
-        onClose={() => setSelectedUser(null)}
-        PaperProps={{
-          sx: {
-            minWidth: { xs: '90%', sm: 400 }
-          }
-        }}
-      >
-        <DialogTitle>
-          Login as {selectedUser?.name}
-          <IconButton
-            sx={{ position: 'absolute', right: 8, top: 8 }}
-            onClick={() => setSelectedUser(null)}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Enter PIN"
-              type="password"
-              fullWidth
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              error={!!error}
-              helperText={error}
-              inputProps={{
-                maxLength: 4,
-                pattern: '\\d*',
+        <Dialog open={!!selectedUser} onClose={handleClose}>
+          <DialogTitle>
+            Enter PIN
+            <IconButton
+              aria-label="close"
+              onClick={handleClose}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
               }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedUser(null)}>Cancel</Button>
-          <Button onClick={handleLogin} variant="contained">
-            Login
-          </Button>
-        </DialogActions>
-      </Dialog>
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ mt: 2 }}>
+              {error && (
+                <Typography color="error" sx={{ mb: 2 }}>
+                  {error}
+                </Typography>
+              )}
+              <TextField
+                autoFocus
+                margin="dense"
+                label="PIN"
+                type="password"
+                fullWidth
+                value={pinValue}
+                onChange={(e) => setPinValue(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} disabled={loading}>Cancel</Button>
+            <Button 
+              onClick={handleLogin} 
+              variant="contained" 
+              disabled={loading || !pinValue}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Login'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Container>
     </Box>
   );
 };

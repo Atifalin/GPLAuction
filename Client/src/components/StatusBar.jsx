@@ -1,40 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Slide, IconButton, Typography, Stack, Chip } from '@mui/material';
-import { KeyboardArrowUp, KeyboardArrowDown } from '@mui/icons-material';
-import { socket } from '../socket';
+import { Box, Typography, Paper, Chip } from '@mui/material';
+import { io } from 'socket.io-client';
 
 const StatusBar = () => {
-  const [isVisible, setIsVisible] = useState(true);
   const [status, setStatus] = useState({
     server: false,
     mongodb: false,
-    connectedClients: 0
+    onlineUsers: 0
   });
 
-  // Auto-hide timer
   useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-      }, 5000); // Hide after 5 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, status]);
+    const socket = io('http://localhost:5000');
+    const user = JSON.parse(localStorage.getItem('user'));
 
-  // Socket listeners
-  useEffect(() => {
-    const handleStatus = (newStatus) => {
-      setStatus(prev => ({ ...prev, ...newStatus }));
-      setIsVisible(true); // Show bar when status changes
-    };
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      if (user?._id) {
+        socket.emit('userConnected', user._id);
+      }
+    });
 
-    socket.on('serverStatus', handleStatus);
-    
-    // Initial status check
-    socket.emit('getStatus');
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+      setStatus(prev => ({ ...prev, server: false }));
+    });
 
+    socket.on('serverStatus', (newStatus) => {
+      console.log('Server status update:', newStatus);
+      setStatus(newStatus);
+    });
+
+    // Cleanup on unmount
     return () => {
-      socket.off('serverStatus', handleStatus);
+      if (user?._id) {
+        socket.emit('userDisconnected', user._id);
+      }
+      socket.disconnect();
     };
   }, []);
 
@@ -48,70 +49,43 @@ const StatusBar = () => {
         left: 0,
         right: 0,
         zIndex: 1000,
+        transition: 'transform 0.3s ease-in-out',
+        transform: 'translateY(calc(100% - 24px))',
+        '&:hover': {
+          transform: 'translateY(0)',
+        },
       }}
     >
-      <Slide direction="up" in={isVisible}>
-        <Box
-          sx={{
-            bgcolor: 'background.paper',
-            boxShadow: 3,
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            p: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            border: '1px solid',
-            borderColor: 'divider',
-            borderBottom: 'none',
-          }}
-        >
-          <Stack direction="row" spacing={2} alignItems="center" sx={{ ml: 2 }}>
-            <Chip
-              label={`Server ${status.server ? 'Online' : 'Offline'}`}
-              color={getStatusColor(status.server)}
-              size="small"
-              variant="outlined"
-            />
-            <Chip
-              label={`MongoDB ${status.mongodb ? 'Connected' : 'Disconnected'}`}
-              color={getStatusColor(status.mongodb)}
-              size="small"
-              variant="outlined"
-            />
-            <Typography variant="body2" color="text.secondary">
-              Connected Clients: {status.connectedClients}
-            </Typography>
-          </Stack>
-          <IconButton 
-            size="small" 
-            onClick={() => setIsVisible(!isVisible)}
-            sx={{ mr: 1 }}
-          >
-            {isVisible ? <KeyboardArrowDown /> : <KeyboardArrowUp />}
-          </IconButton>
+      <Paper
+        elevation={3}
+        sx={{
+          p: 1,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderTopLeftRadius: 4,
+          borderTopRightRadius: 4,
+          bgcolor: (theme) => theme.palette.background.paper,
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', ml: 2 }}>
+          <Chip
+            label={`Server ${status.server ? 'Connected' : 'Disconnected'}`}
+            color={getStatusColor(status.server)}
+            size="small"
+            variant="outlined"
+          />
+          <Chip
+            label={`MongoDB ${status.mongodb ? 'Connected' : 'Disconnected'}`}
+            color={getStatusColor(status.mongodb)}
+            size="small"
+            variant="outlined"
+          />
         </Box>
-      </Slide>
-      {!isVisible && (
-        <IconButton
-          size="small"
-          onClick={() => setIsVisible(true)}
-          sx={{
-            position: 'fixed',
-            bottom: 0,
-            right: 16,
-            bgcolor: 'background.paper',
-            boxShadow: 1,
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            '&:hover': {
-              bgcolor: 'background.paper',
-            },
-          }}
-        >
-          <KeyboardArrowUp />
-        </IconButton>
-      )}
+        <Typography variant="body2" sx={{ mr: 2 }}>
+          Online Users: {status.onlineUsers}
+        </Typography>
+      </Paper>
     </Box>
   );
 };

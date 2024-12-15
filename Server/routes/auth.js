@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 // Get all users with their login status
 router.get('/users', async (req, res) => {
   try {
-    const users = await User.find({}, '_id name emoji isLoggedIn');
+    const users = await User.find({}, '-pin');
     console.log('Fetched users:', users); // Debug log
     res.json(users);
   } catch (error) {
@@ -15,21 +14,14 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// Login
+// Login route
 router.post('/login', async (req, res) => {
   try {
-    const { _id, pin } = req.body;
-    console.log('Login attempt for user:', _id); // Debug log
-    
-    const user = await User.findById(_id);
-    console.log('Found user:', user); // Debug log
+    const { userId, pin } = req.body;
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.isLoggedIn) {
-      return res.status(400).json({ message: 'User is already logged in' });
     }
 
     if (user.pin !== pin) {
@@ -40,19 +32,13 @@ router.post('/login', async (req, res) => {
     user.isLoggedIn = true;
     await user.save();
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { _id: user._id, name: user.name },
-      process.env.JWT_SECRET || 'your_jwt_secret_key_here',
-      { expiresIn: '24h' }
-    );
-
     res.json({
-      token,
+      success: true,
       user: {
         _id: user._id,
         name: user.name,
-        emoji: user.emoji
+        emoji: user.emoji,
+        isLoggedIn: user.isLoggedIn
       }
     });
   } catch (error) {
@@ -64,10 +50,8 @@ router.post('/login', async (req, res) => {
 // Logout
 router.post('/logout', async (req, res) => {
   try {
-    const { _id } = req.body;
-    console.log('Logout attempt for user:', _id); // Debug log
-    
-    const user = await User.findById(_id);
+    const { userId } = req.body;
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
