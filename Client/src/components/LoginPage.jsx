@@ -85,10 +85,14 @@ const LoginPage = ({ onLogin }) => {
       if (response.data.success) {
         const { token, user } = response.data;
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('user', JSON.stringify({
+          _id: user._id,
+          name: user.name,
+          emoji: user.emoji,
+          isLoggedIn: user.isLoggedIn
+        }));
         
         onLogin(user);
-        window.location.href = '/'; 
       } else {
         setError('Login failed. Please try again.');
         setPinValue('');

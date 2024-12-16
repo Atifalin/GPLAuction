@@ -41,6 +41,14 @@ const Navbar = ({ user, onLogout }) => {
           
           <Button 
             component={Link} 
+            to="/auctions" 
+            color="inherit"
+          >
+            Auctions
+          </Button>
+          
+          <Button 
+            component={Link} 
             to="/auction-selection" 
             color="inherit"
           >

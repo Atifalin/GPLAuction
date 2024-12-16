@@ -69,11 +69,24 @@ const Home = () => {
           <Grid item xs={12} sm={6}>
             <Button
               component={Link}
-              to="/auction-selection"
+              to="/auctions"
               variant="contained"
               color="secondary"
               fullWidth
               startIcon={<GavelIcon />}
+              sx={{ py: 1.5 }}
+            >
+              View Auctions
+            </Button>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Button
+              component={Link}
+              to="/auction-selection"
+              variant="outlined"
+              color="primary"
+              fullWidth
+              startIcon={<PersonAddIcon />}
               sx={{ py: 1.5 }}
             >
               Auction Selection

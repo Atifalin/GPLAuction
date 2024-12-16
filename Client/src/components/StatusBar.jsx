@@ -1,41 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Chip } from '@mui/material';
-import { io } from 'socket.io-client';
+import { socket } from '../socket';
 
 const StatusBar = () => {
   const [status, setStatus] = useState({
-    server: false,
+    server: socket.connected,
     mongodb: false,
     onlineUsers: 0
   });
 
   useEffect(() => {
-    const socket = io('http://localhost:5000');
     const user = JSON.parse(localStorage.getItem('user'));
 
-    socket.on('connect', () => {
+    // Initial connection status
+    setStatus(prev => ({ ...prev, server: socket.connected }));
+
+    const handleConnect = () => {
       console.log('Connected to server');
+      setStatus(prev => ({ ...prev, server: true }));
       if (user?._id) {
         socket.emit('userConnected', user._id);
       }
-    });
+    };
 
-    socket.on('disconnect', () => {
+    const handleDisconnect = () => {
       console.log('Disconnected from server');
       setStatus(prev => ({ ...prev, server: false }));
-    });
+    };
 
-    socket.on('serverStatus', (newStatus) => {
+    const handleServerStatus = (newStatus) => {
       console.log('Server status update:', newStatus);
       setStatus(newStatus);
-    });
+    };
+
+    // Set up event listeners
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('serverStatus', handleServerStatus);
+
+    // Request initial status
+    socket.emit('getServerStatus');
 
     // Cleanup on unmount
     return () => {
       if (user?._id) {
         socket.emit('userDisconnected', user._id);
       }
-      socket.disconnect();
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('serverStatus', handleServerStatus);
     };
   }, []);
 

@@ -7,6 +7,7 @@ import StatusBar from './components/StatusBar';
 import Players from './pages/Players';
 import Home from './pages/Home';
 import AuctionPlayerSelection from './pages/AuctionPlayerSelection';
+import AuctionsHome from './pages/AuctionsHome';
 import api from './api/axios';
 import io from 'socket.io-client';
 
@@ -16,26 +17,10 @@ const theme = createTheme({
   },
 });
 
-const ProtectedRoute = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  if (loading) {
-    return null;
-  }
-
+const ProtectedRoute = ({ user, children }) => {
   if (!user) {
     return <Navigate to="/login" />;
   }
-
   return children;
 };
 
@@ -43,12 +28,36 @@ function App() {
   const [user, setUser] = useState(null);
   const [socket, setSocket] = useState(null);
   const [serverStatus, setServerStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const verifyToken = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const response = await api.get('/auth/verify');
+        if (response.data.valid) {
+          setUser(response.data.user);
+        } else {
+          // Clear invalid token and user data
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      } catch (error) {
+        console.error('Token verification error:', error);
+        // Clear invalid token and user data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyToken();
 
     const newSocket = io('http://localhost:5000');
     setSocket(newSocket);
@@ -67,7 +76,6 @@ function App() {
   }, []);
 
   const handleLogin = (userData) => {
-    localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     if (socket) {
       socket.emit('userLoggedIn', userData._id);
@@ -77,6 +85,7 @@ function App() {
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout', { userId: user._id });
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
       if (socket) {
@@ -87,6 +96,10 @@ function App() {
       console.error('Logout error:', error);
     }
   };
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -101,21 +114,28 @@ function App() {
                 user ? <Navigate to="/" /> : <LoginPage onLogin={handleLogin} />
               } />
               <Route path="/" element={
-                <ProtectedRoute>
+                <ProtectedRoute user={user}>
                   <Box sx={{ mt: 8, mb: 2 }}>
                     <Home user={user} />
                   </Box>
                 </ProtectedRoute>
               } />
               <Route path="/players" element={
-                <ProtectedRoute>
+                <ProtectedRoute user={user}>
                   <Box sx={{ mt: 8, mb: 2 }}>
                     <Players />
                   </Box>
                 </ProtectedRoute>
               } />
+              <Route path="/auctions" element={
+                <ProtectedRoute user={user}>
+                  <Box sx={{ mt: 8, mb: 2 }}>
+                    <AuctionsHome />
+                  </Box>
+                </ProtectedRoute>
+              } />
               <Route path="/auction-selection" element={
-                <ProtectedRoute>
+                <ProtectedRoute user={user}>
                   <Box sx={{ mt: 8, mb: 2 }}>
                     <AuctionPlayerSelection />
                   </Box>
