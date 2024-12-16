@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Auction = require('../models/Auction');
 const User = require('../models/User');
+const AuctionPlayer = require('../models/AuctionPlayer'); // Added this line
 const auth = require('../middleware/auth');
 
 // Get all auctions
@@ -32,6 +33,15 @@ router.post('/create', auth, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if user has selected enough players
+    const selectedPlayersCount = await AuctionPlayer.countDocuments({ userId: user._id.toString() });
+    if (selectedPlayersCount < 50) {
+      return res.status(400).json({ 
+        message: 'You need to select at least 50 players before creating an auction',
+        redirect: '/auction-selection'
+      });
     }
 
     const auction = new Auction({

@@ -102,15 +102,24 @@ A real-time football player auction system built with React, Node.js, and MongoD
 
 #### December 15, 2023
 - **Enhanced Auction Management**:
+  - Added validation requiring 50+ selected players to create an auction
   - Improved auction deletion with instant notifications
   - Added real-time list refresh after auction actions
   - Fixed UI synchronization issues with socket events
   - Better error handling for auction operations
 
 - **User Experience Improvements**:
+  - Added automatic redirect to player selection when needed
   - Added success notifications for auction creation/deletion
   - Streamlined socket event handling for better performance
   - Improved state management for auction list updates
+  - Enhanced button states based on auction participation
+
+- **Validation and Safety**:
+  - Minimum 50 players required before auction creation
+  - Join button changes to View after joining auction
+  - Proper error messages with guided navigation
+  - Real-time participant count updates
 
 ## 🛠 Technical Stack
 

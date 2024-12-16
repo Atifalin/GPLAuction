@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, Typography, Button, Box, Chip, Stack } from '@mui/material';
 import { format } from 'date-fns';
 import HostControls from './HostControls';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
-const AuctionDetailCard = ({ auction, currentUser, onJoin, onError }) => {
+const AuctionDetailCard = ({ auction, currentUser, onJoin, onView, onError }) => {
   const isHost = currentUser?._id === auction.host.userId;
   const isPending = auction.status === 'Pending';
   const isActive = auction.status === 'Active';
+  const hasJoined = auction.participants?.some(p => p.userId.toString() === currentUser?._id.toString());
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -56,13 +58,23 @@ const AuctionDetailCard = ({ auction, currentUser, onJoin, onError }) => {
             />
           ) : (
             <>
-              {isPending && (
+              {isPending && !hasJoined && (
                 <Button 
                   variant="contained" 
                   color="primary"
                   onClick={() => onJoin(auction._id)}
                 >
                   Join
+                </Button>
+              )}
+              {(hasJoined || !isPending) && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<VisibilityIcon />}
+                  onClick={() => onView(auction._id)}
+                >
+                  View
                 </Button>
               )}
             </>

@@ -95,7 +95,15 @@ const AuctionsHome = () => {
       });
     } catch (error) {
       console.error('Creation error:', error);
-      setError(error.response?.data?.message || 'Failed to create auction');
+      if (error.response?.data?.redirect) {
+        setError('You need to select at least 50 players before creating an auction');
+        // Wait a bit before redirecting to show the error message
+        setTimeout(() => {
+          navigate(error.response.data.redirect);
+        }, 2000);
+      } else {
+        setError(error.response?.data?.message || 'Failed to create auction');
+      }
     }
   };
 
@@ -195,6 +203,7 @@ const AuctionsHome = () => {
                 currentUser={JSON.parse(localStorage.getItem('user'))}
                 onJoin={handleJoinAuction}
                 onView={handleViewAuction}
+                onError={setError}
               />
             ))}
             {activeAuctions.length === 0 && (
@@ -230,6 +239,7 @@ const AuctionsHome = () => {
                   auction={auction}
                   currentUser={JSON.parse(localStorage.getItem('user'))}
                   onView={handleViewAuction}
+                  onError={setError}
                 />
               ))}
               {completedAuctions.length === 0 && (
